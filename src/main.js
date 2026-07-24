@@ -8,6 +8,7 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
 const resultsGrid = document.querySelector("#resultsGrid");
 const titleCard = document.querySelector("h2");
 
+
 const showResults = (movies) => {
     resultsGrid.innerHTML = "";
     if(!movies || movies.length === 0){
@@ -57,6 +58,21 @@ const showResults = (movies) => {
     });
 };
 
+const showDeafults = async () =>{
+    try{
+        const url = `${baseUrl}/trending/movie/week?api_key=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if(titleCard){
+            titleCard.innerText = "Trending Highlights";
+        }
+        showResults(data.results);
+    }catch(error){
+        console.error("Error fetching default movies:", error);
+    }
+};
+
+
 const getMovie = async (query) => {
     try{
         const url = `${baseUrl}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
@@ -89,3 +105,5 @@ searchInput.addEventListener("keydown", (e) =>{
         startSearch();
     }
 });
+
+showDeafults();
