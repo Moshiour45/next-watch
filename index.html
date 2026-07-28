@@ -1,77 +1,114 @@
 <!doctype html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NextWatch</title>
   <link href="/src/style.css" rel="stylesheet">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-teal-500/30 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
-  <!-- Header -->
-  <header class="sticky top-0 z-50 bg-slate-950/60 backdrop-blur-xl border-b border-transparent transition-colors duration-300 hover:border-teal-500/50">
+
+<body
+  class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-teal-500/30 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+  
+  <!-- Main Navigation Header -->
+  <header
+    class="sticky top-0 z-50 bg-slate-950/60 backdrop-blur-xl border-b border-transparent transition-colors duration-300 hover:border-teal-500/50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
       <div class="flex items-center gap-8">
         <a href="#" class="text-3xl font-extrabold tracking-tighter text-white flex items-center gap-2">
-          <svg class="w-8 h-8 text-teal-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          <svg class="w-8 h-8 text-teal-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+          </svg>
           NextWatch
         </a>
+        
+        <!-- Desktop Navigation Links -->
         <nav class="hidden md:flex gap-6 text-sm font-medium text-slate-400">
           <a href="#" class="hover:text-white transition-colors">Discover</a>
           <a href="#" class="hover:text-white transition-colors">TV Shows</a>
           <a href="#" class="hover:text-white transition-colors">Movies</a>
         </nav>
       </div>
+      
+      <!-- User Profile Avatar -->
       <div class="flex items-center gap-4">
-        <div class="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden cursor-pointer hover:border-teal-400 transition-colors">
-          <img src="https://ui-avatars.com/api/?name=User&background=0D8B93&color=fff" alt="Profile" class="w-full h-full object-cover">
+        <div
+          class="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden cursor-pointer hover:border-teal-400 transition-colors">
+          <img src="https://ui-avatars.com/api/?name=User&background=0D8B93&color=fff" alt="Profile"
+            class="w-full h-full object-cover">
         </div>
       </div>
     </div>
   </header>
 
+  <!-- Primary Content Area -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <!-- Hero & Search Section -->
+    
+    <!-- Hero Section with Search Interface -->
     <section class="max-w-4xl mx-auto text-center mb-24 relative z-10">
       <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 text-white drop-shadow-lg">
         Find your next <span class="text-teal-400">obsession.</span>
       </h1>
-      <p class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto">Explore thousands of movies and TV shows. Immerse yourself in the world of cinema.</p>
-      
+      <p class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto">Explore thousands of movies and TV shows. Immerse
+        yourself in the world of cinema.</p>
+
+      <!-- Interactive Search Bar Container -->
       <div class="relative group max-w-2xl mx-auto">
-        <div class="absolute inset-0 bg-teal-500/10 rounded-2xl blur-xl group-focus-within:bg-teal-500/20 transition-all duration-500"></div>
-        <div class="relative flex items-center bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl focus-within:border-teal-500/50 focus-within:ring-1 focus-within:ring-teal-500/50 transition-all duration-300">
+        <div
+          class="absolute inset-0 bg-teal-500/10 rounded-2xl blur-xl group-focus-within:bg-teal-500/20 transition-all duration-500">
+        </div>
+        <div
+          class="relative flex items-center bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl focus-within:border-teal-500/50 focus-within:ring-1 focus-within:ring-teal-500/50 transition-all duration-300">
+          
           <div class="pl-6 text-slate-500 group-focus-within:text-teal-400 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
           </div>
-          <input 
-            type="search" 
-            id="searchInput" 
-            placeholder="Search movies, TV shows, directors..." 
-            class="w-full bg-transparent border-none py-5 pl-4 pr-4 text-lg text-white placeholder-slate-500 focus:outline-none focus:ring-0"
-          >
-          <button 
-            id="searchButton"
-            class="px-8 py-5 bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-slate-950 font-bold transition-colors duration-300 border-l border-slate-800 focus:outline-none"
-          >
+          
+          <input type="search" id="searchInput" placeholder="Search movies, TV shows, directors..."
+            class="w-full bg-transparent border-none py-3 md:py-5 pl-4 pr-4 text-base md:text-lg text-white placeholder-slate-500 focus:outline-none focus:ring-0">
+          
+          <button id="searchButton"
+            class="px-4 md:px-8 py-3 md:py-5 bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-slate-950 font-bold transition-colors duration-300 border-l border-slate-800 focus:outline-none">
             Search
           </button>
         </div>
       </div>
     </section>
 
-   <!-- Results Container -->
+    <!-- Movie & TV Show Results Feed -->
     <section>
       <div class="flex items-end justify-between mb-10 border-b border-slate-800 pb-4">
         <h2 class="text-3xl font-bold text-white tracking-tight">Trending Highlights</h2>
       </div>
-      
-      <!-- resultsGrid MUST be completely empty. The JavaScript will fill it. -->
+
+      <!-- Dynamic grid container: Populated asynchronously via main.js based on search or trending data -->
       <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-        
       </div>
     </section>
+    
+    <!-- Detailed View Modal -->
+    <!-- Note: Hidden by default. JS toggles the 'hidden' and 'flex' classes to display -->
+    <div id="details-modal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 transition-opacity">
+
+      <!-- Scrollable Inner Container: Limits height on mobile to prevent viewport overflow -->
+      <div
+        class="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-teal-900/20">
+
+        <!-- Dynamic Content Wrapper: Populated by the showDetails() function in main.js -->
+        <div id="modal-content" class="p-6 md:p-8">
+        </div>
+
+      </div>
+
+    </div>
   </main>
 
   <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>
