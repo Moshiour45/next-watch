@@ -9,6 +9,14 @@ const resultsGrid = document.querySelector("#resultsGrid");
 const titleCard = document.querySelector("h2");
 
 
+const showLoader = () =>{
+    resultsGrid.innerHTML = `
+        <div class="col-span-full flex justify-center py-16">
+            <div class="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    `;
+};
+
 const showResults = (queries) => {
     resultsGrid.innerHTML = "";
     if (!queries || queries.length === 0) {
@@ -80,6 +88,7 @@ const showDefaults = async () => {
 
 
 const fetchQuery = async (query) => {
+    showLoader();
     try {
         const url = `${baseUrl}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
         const response = await fetch(url);
@@ -98,6 +107,9 @@ const fetchQuery = async (query) => {
         `;
     }
 };
+
+
+
 
 const startSearch = () => {
     const query = searchInput.value.trim();
@@ -203,6 +215,11 @@ const fetchDetails = async (id, type) => {
             fetch(dataUrl),
             fetch(castUrl)
         ]);
+        
+        if(!dataResponse.ok || !castResponse.ok){
+            throw new Error("Failed to fetch details");
+        }
+
         const data = await dataResponse.json();
         const cast = await castResponse.json();
         showDetails(data, cast || [], type);
