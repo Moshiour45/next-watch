@@ -1,5 +1,10 @@
+
 // NextWatch - Main JavaScript File
-// JS logic goes here. No functional logic implemented yet.
+// TMDB-powered movie/TV discovery app
+
+//  Configuration & DOM References
+
+
 const apiKey = import.meta.env.VITE_API_KEY;
 const searchInput = document.querySelector("#searchInput");
 const searchBtn = document.querySelector("#searchButton");
@@ -9,6 +14,25 @@ const resultsGrid = document.querySelector("#resultsGrid");
 const titleCard = document.querySelector("h2");
 
 
+//  Modal Helpers (open / close)
+
+const openModal = () =>{
+    const modal = document.querySelector("#details-modal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    document.body.style.overflow = "hidden";
+};
+
+const closeModal = () =>{
+    const modal = document.querySelector("#details-modal");
+    modal.classList.remove("flex");
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+};
+
+
+//  Loading Indicators
+
 const showLoader = () =>{
     resultsGrid.innerHTML = `
         <div class="col-span-full flex justify-center py-16">
@@ -16,6 +40,21 @@ const showLoader = () =>{
         </div>
     `;
 };
+
+const showModalLoader = () =>{
+    const modalContent = document.querySelector("#modal-content");
+    if(modalContent){
+        modalContent.innerHTML = `
+            <div class="flex justify-center items-center py-20 w-full">
+                <div class="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        `;
+    }
+    openModal();
+};
+
+
+//  Results Grid — Render Cards
 
 const showResults = (queries) => {
     resultsGrid.innerHTML = "";
@@ -72,52 +111,8 @@ const showResults = (queries) => {
     });
 };
 
-const showDefaults = async () => {
-    try {
-        const url = `${baseUrl}/trending/movie/week?api_key=${apiKey}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (titleCard) {
-            titleCard.innerText = "Trending Highlights";
-        }
-        showResults(data.results);
-    } catch (error) {
-        console.error("Error fetching default movies:", error);
-    }
-};
 
-
-const fetchQuery = async (query) => {
-    showLoader();
-    try {
-        const url = `${baseUrl}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (titleCard) {
-            titleCard.textContent = `Search Results for "${query}"`;
-        }
-        const filteredData = data.results.filter(item => item.media_type === "movie" || item.media_type === "tv");
-        showResults(filteredData);
-    } catch (error) {
-        console.error("Error fetching data:", error);
-        resultsGrid.innerHTML = `
-            <div class="col-span-full text-center py-16">
-                <p class="text-red-400 text-lg">Something went wrong while loading movies.</p>
-            </div>
-        `;
-    }
-};
-
-
-
-
-const startSearch = () => {
-    const query = searchInput.value.trim();
-    if (query != "") {
-        fetchQuery(query);
-    }
-};
-
+//  Detail Modal — Render Full Movie/TV Info
 
 const showDetails = (data, castData, type) => {
     const modal = document.querySelector("#details-modal");
@@ -130,7 +125,7 @@ const showDetails = (data, castData, type) => {
     let directorName = "N/A";
 
     if (type === "movie") {
-        const director = castData.crew.find(member => member.job === directorLabel);
+        const director = (castData?.crew || []).find(member => member.job === directorLabel);
         directorName = director ? director.name : "N/A";
     } else {
         directorName = data.created_by && data.created_by.length > 0 ? data.created_by.map(c => c.name).join(", ") : "N/A";
@@ -142,7 +137,7 @@ const showDetails = (data, castData, type) => {
     const poster = data.poster_path ? `${imageBaseUrl}${data.poster_path}` : 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=500&auto=format&fit=crop';
     const genres = data.genres ? data.genres.map(g => g.name).join(", ") : "N/A";
     const overview = data.overview || "No description available.";
-    const topCast = castData.cast.slice(0, 4).map(actor => {
+    const topCast = (castData?.cast || []).slice(0, 4).map(actor => {
         const profilePic = actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : `https://ui-avatars.com/api/?name` + encodeURIComponent(actor.name) + `&background=random&color=fff`;
         return `
         <div class="flex flex-col items-center text-center gap-1">
@@ -159,7 +154,7 @@ const showDetails = (data, castData, type) => {
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             
-            <!-- FIXED: w-1/2 mx-auto on mobile, w-1/3 on md screens -->
+            
             <div class="w-1/2 sm:w-1/3 md:w-1/3 shrink-0 mx-auto md:mx-0 pt-4 md:pt-0">
                 <img src="${poster}" alt="${displayTitle}" class="w-full rounded-xl shadow-lg border border-slate-700/50 object-cover">
             </div>
@@ -174,7 +169,7 @@ const showDetails = (data, castData, type) => {
                     <span>${type === 'tv' ? 'TV Series' : 'Movie'}</span>
                 </div>
                 
-                <!-- FIXED: Single column on mobile, 2 columns on sm+ -->
+                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <p class="text-xs tracking-wider text-teal-500/80 uppercase font-bold mb-1">${directorLabel}</p>
@@ -207,7 +202,58 @@ const showDetails = (data, castData, type) => {
     modal.classList.add("flex");
 };
 
+
+//  API Fetchers — Trending, Search, Details
+
+const showDefaults = async () => {
+    try {
+        const url = `${baseUrl}/trending/movie/week?api_key=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (titleCard) {
+            titleCard.innerText = "Trending Highlights";
+        }
+        showResults(data.results);
+    } catch (error) {
+        console.error("Error fetching default movies:", error);
+    }
+};
+
+let currentSearchController = null;
+
+const fetchQuery = async (query) => {
+    if(currentSearchController){
+        currentSearchController.abort();
+    }
+    currentSearchController = new AbortController();
+    
+    showLoader();
+    try {
+        const url = `${baseUrl}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
+        const response = await fetch(url, {signal : currentSearchController.signal});
+        const data = await response.json();
+        if (titleCard) {
+            titleCard.textContent = `Search Results for "${query}"`;
+        }
+        const filteredData = data.results.filter(item => item.media_type === "movie" || item.media_type === "tv");
+        showResults(filteredData);
+    } catch (error) {
+
+        if(error.name == "AbortError"){
+            return;
+        }
+
+        console.error("Error fetching data:", error);
+        resultsGrid.innerHTML = `
+            <div class="col-span-full text-center py-16">
+                <p class="text-red-400 text-lg">Something went wrong while loading movies.</p>
+            </div>
+        `;
+    }
+};
+
 const fetchDetails = async (id, type) => {
+    showModalLoader();
     try {
         const dataUrl = `${baseUrl}/${type}/${id}?api_key=${apiKey}`;
         const castUrl = `${baseUrl}/${type}/${id}/credits?api_key=${apiKey}`;
@@ -226,17 +272,61 @@ const fetchDetails = async (id, type) => {
 
     } catch (e) {
         console.error("Error fetching details:", e);
+        const modalContent = document.querySelector("#modal-content");
+        if(modalContent){
+            modalContent.innerHTML = `
+                <div class="text-center py-10 relative bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <button id="close-modal" class="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                    <p class="text-red-400 font-medium">Failed to load movie details. Please try again.</p>
+                </div>
+            `;
+        }
     }
 
 };
 
+
+//  Search Logic & Debounce
+
+const startSearch = () => {
+    const query = searchInput.value.trim();
+    if (query) {
+        fetchQuery(query);
+    }else{
+        if(currentSearchController){
+            currentSearchController.abort();
+        }
+        showDefaults();
+    }
+};
+
+const debounce = (func, delay = 500) => {
+    let timeoutID;
+    return (...args) => {
+        clearTimeout(timeoutID);
+        timeoutID = setTimeout(() => {
+            func.apply(null, args);
+        }, delay);
+    };
+};
+
+const debouncedSearch = debounce(startSearch, 500);
+
+
+//  Event Listeners
+
+// Search triggers
 searchBtn.addEventListener("click", startSearch);
 searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         startSearch();
     }
 });
+searchInput.addEventListener("input", debouncedSearch);
 
+// Card click — open details modal
 resultsGrid.addEventListener("click", (e) => {
     const card = e.target.closest("article");
     if (card) {
@@ -246,15 +336,27 @@ resultsGrid.addEventListener("click", (e) => {
     }
 });
 
+// Modal close — click backdrop or close button
 document.addEventListener("click", (e) => {
     const modal = document.querySelector("#details-modal");
     if (!modal) {
         return;
     }
     if (e.target === modal || e.target.closest("#close-modal")) {
+        closeModal();
+    }
+});
+
+// Modal close — Escape key
+document.addEventListener("keydown", (e)=>{
+    const modal = document.querySelector("#details-modal");
+    if (e.key === "Escape" && modal && !modal.classList.contains("hidden")) {
         modal.classList.add("hidden");
         modal.classList.remove("flex");
     }
 });
+
+
+//  Init — Load Trending on Page Load
 
 showDefaults();
