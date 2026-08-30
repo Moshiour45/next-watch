@@ -9,6 +9,7 @@ const baseUrl = 'https://api.themoviedb.org/3';
 const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
 const resultsGrid = document.querySelector("#resultsGrid");
 const titleCard = document.querySelector("h2");
+const logo = document.querySelector("#logo");
 
 
 //  Modal Helpers (open / close)
@@ -196,9 +197,11 @@ const showDetails = (data, castData, type) => {
     }
 
     // Official Trailer (YouTube)
-    const trailer = data.videos?.results?.find(
-        vid => vid.site === "YouTube" && (vid.type === "Trailer" || vid.type === "Teaser")
-    );
+    const youtubeVideos = data.videos?.results?.filter(vid => vid.site === "YouTube") || [];
+    const trailer = youtubeVideos.find(vid => vid.official && vid.type === "Trailer") 
+                 || youtubeVideos.find(vid => vid.official && vid.type === "Teaser")
+                 || youtubeVideos.find(vid => vid.type === "Trailer")
+                 || youtubeVideos.find(vid => vid.type === "Teaser");
     const trailerBtn = trailer 
         ? `<a href="https://www.youtube.com/watch?v=${trailer.key}" target="_blank" rel="noopener noreferrer" 
               class="inline-flex items-center gap-2 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/30 transition-colors">
@@ -260,19 +263,37 @@ const showDetails = (data, castData, type) => {
             `;
         }
 
-        // Generate Season Dropdown 
+        // Generate Custom Season Dropdown 
         if (data.seasons && data.seasons.length > 0) {
             const validSeasons = data.seasons.filter(s => s.season_number > 0);
-            const options = validSeasons.map(s => `<option value="${s.season_number}">${s.name} (${s.episode_count} eps)</option>`).join('');
+            
+            // Build custom <li> options instead of <option> tags
+            const optionsList = validSeasons.map(s => `
+                <li class="season-option px-4 py-2.5 text-xs text-slate-300 hover:bg-teal-500/10 hover:text-teal-400 cursor-pointer transition-colors border-b border-slate-800/50 last:border-0 flex items-center justify-between gap-3" data-value="${s.season_number}">
+                    <span class="line-clamp-2">${s.name}</span>
+                    <span class="text-[10px] text-slate-500 whitespace-nowrap shrink-0">${s.episode_count} eps</span>
+                </li>
+            `).join('');
+            
+            const initialLabel = validSeasons.length > 0 ? validSeasons[0].name : 'Select Season';
             
             episodesSection = `
                 ${nextEpisodeBadge}
                 <div class="mt-6 pt-6 border-t border-slate-800/80">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm tracking-wider text-teal-500/80 uppercase font-bold">Episodes Guide</h3>
-                        <select id="season-selector" data-tvid="${data.id}" class="bg-slate-950 text-xs font-semibold text-white px-3 py-2 rounded-lg border border-slate-700 outline-none focus:border-teal-400 cursor-pointer">
-                            ${options}
-                        </select>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3 relative">
+                        <h3 class="text-sm tracking-wider text-teal-500/80 uppercase font-bold shrink-0">Episodes Guide</h3>
+                        
+                        <!-- Custom Tailwind Dropdown -->
+                        <div class="relative w-full sm:max-w-[260px]">
+                            <button id="custom-season-btn" class="w-full flex items-center justify-between bg-slate-950 text-xs font-semibold text-white px-3 py-2 rounded-lg border border-slate-700 hover:border-teal-400 transition-colors cursor-pointer outline-none shadow-sm">
+                                <span id="custom-season-label" class="truncate pr-2">${initialLabel}</span>
+                                <svg id="custom-season-icon" class="w-4 h-4 text-slate-400 shrink-0 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            
+                            <ul id="custom-season-dropdown" class="hidden absolute right-0 z-50 w-full sm:w-[320px] mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-64 overflow-y-auto origin-top-right" style="scrollbar-width: thin; scrollbar-color: #0D8B93 transparent;">
+                                ${optionsList}
+                            </ul>
+                        </div>
                     </div>
                     <div id="episodes-list" class="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #0D8B93 transparent;">
                     </div>
@@ -426,18 +447,46 @@ const showDetails = (data, castData, type) => {
     modal.classList.add("flex");
 
     if (type === "tv" && data.seasons && data.seasons.length > 0) {
-        const selector = document.querySelector("#season-selector");
         const validSeasons = data.seasons.filter(s => s.season_number > 0);
         
-        if (selector && validSeasons.length > 0) {
+        if (validSeasons.length > 0) {
             const initialSeason = validSeasons[0].season_number;
             fetchSeasonEpisodes(data.id, initialSeason);
 
-            selector.addEventListener("change", (e) => {
-                const selectedSeason = e.target.value;
-                const tvId = e.target.getAttribute("data-tvid");
-                fetchSeasonEpisodes(tvId, selectedSeason);
-            });
+            // Custom Dropdown Interactive Logic
+            const seasonBtn = document.querySelector("#custom-season-btn");
+            const seasonDropdown = document.querySelector("#custom-season-dropdown");
+            const seasonLabel = document.querySelector("#custom-season-label");
+            const seasonIcon = document.querySelector("#custom-season-icon");
+
+            if (seasonBtn && seasonDropdown) {
+                // Toggle menu on button click
+                seasonBtn.addEventListener("click", (e) => {
+                    e.stopPropagation(); // Prevents the global click listener from closing it instantly
+                    const isHidden = seasonDropdown.classList.contains("hidden");
+                    seasonDropdown.classList.toggle("hidden");
+                    seasonIcon.classList.toggle("rotate-180", isHidden);
+                });
+
+                // Handle selecting a season from the list
+                const options = seasonDropdown.querySelectorAll(".season-option");
+                options.forEach(option => {
+                    option.addEventListener("click", (e) => {
+                        const li = e.target.closest("li");
+                        const selectedSeason = li.getAttribute("data-value");
+                        
+                        // Grab only the season name, ignoring the episode count span
+                        const selectedText = li.querySelector("span").innerText; 
+                        
+                        // Update UI and fetch new episodes
+                        seasonLabel.innerText = selectedText;
+                        seasonDropdown.classList.add("hidden");
+                        seasonIcon.classList.remove("rotate-180");
+                        
+                        fetchSeasonEpisodes(data.id, selectedSeason);
+                    });
+                });
+            }
         }
     }
 };
@@ -574,10 +623,23 @@ resultsGrid.addEventListener("click", (e) => {
 
 // Modal close — click backdrop or close button
 document.addEventListener("click", (e) => {
-    const modal = document.querySelector("#details-modal");
-    if (!modal) {
-        return;
+    // Handle Custom Dropdown Outside Click
+    const seasonDropdown = document.querySelector("#custom-season-dropdown");
+    const seasonBtn = document.querySelector("#custom-season-btn");
+    const seasonIcon = document.querySelector("#custom-season-icon");
+    
+    if (seasonDropdown && !seasonDropdown.classList.contains("hidden")) {
+        // If the click happened outside the button and outside the dropdown list
+        if (!seasonBtn.contains(e.target) && !seasonDropdown.contains(e.target)) {
+            seasonDropdown.classList.add("hidden");
+            if (seasonIcon) seasonIcon.classList.remove("rotate-180");
+        }
     }
+
+    // Handle Modal Close
+    const modal = document.querySelector("#details-modal");
+    if (!modal) return;
+    
     if (e.target === modal || e.target.closest("#close-modal")) {
         closeModal();
     }
@@ -606,6 +668,20 @@ if (modalContentEl) {
         }
     });
 }
+
+
+if(logo){
+    logo.addEventListener("click", (e) => {
+        e.preventDefault();
+        searchInput.value = "";
+        if(currentSearchController){
+            currentSearchController.abort();
+        }
+        showDefaults();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    })
+}
+
 
 
 //  Init — Load Trending on Page Load
