@@ -136,6 +136,9 @@ const fetchSeasonEpisodes = async (tvId, seasonNum) => {
     try {
         const url = `${baseUrl}/tv/${tvId}/season/${seasonNum}?api_key=${apiKey}`;
         const response = await fetch(url);
+        if(!response.ok){
+            throw new Error(`API error: ${response.status}`);
+        }
         const data = await response.json();
 
         if (!data.episodes || data.episodes.length === 0) {
