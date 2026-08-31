@@ -508,6 +508,7 @@ const showDetails = (data, castData, type) => {
 
 //  API Fetchers — Trending, Search, Details
 const showDefaults = async () => {
+    showLoader();
     try {
         const url = `${baseUrl}/trending/all/week?api_key=${apiKey}`;
         const response = await fetch(url);
@@ -669,8 +670,6 @@ document.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e)=>{
     const modal = document.querySelector("#details-modal");
     if (e.key === "Escape" && modal && !modal.classList.contains("hidden")) {
-        modal.classList.add("hidden");
-        modal.classList.remove("flex");
         closeModal();
     }
 });
