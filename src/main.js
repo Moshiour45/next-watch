@@ -3,6 +3,18 @@
 
 //  Configuration & DOM References
 const apiKey = import.meta.env.VITE_API_KEY;
+
+// API Key Error Handling 
+if (!apiKey) {
+    console.error("VITE_API_KEY is not set. Create a .env file with your TMDB API key.");
+    document.querySelector("#resultsGrid").innerHTML = `
+        <div class="col-span-full text-center py-16">
+            <p class="text-red-400 text-lg font-medium">API key not configured.</p>
+            <p class="text-slate-500 text-sm mt-2">Create a .env file with VITE_API_KEY=your_tmdb_key</p>
+        </div>
+    `;
+}
+
 const searchInput = document.querySelector("#searchInput");
 const searchBtn = document.querySelector("#searchButton");
 const baseUrl = 'https://api.themoviedb.org/3';
@@ -304,7 +316,9 @@ const showDetails = (data, castData, type) => {
 
     // Extract Top Cast
     const topCast = (castData?.cast || []).slice(0, 4).map(actor => {
-        const profilePic = actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : `https://ui-avatars.com/api/?name` + encodeURIComponent(actor.name) + `&background=random&color=fff`;
+        const profilePic = actor.profile_path 
+        ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` 
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(actor.name)}&background=random&color=fff`;
         return `
         <div class="flex flex-col items-center text-center gap-1">
             <img src="${profilePic}" alt="${actor.name}" class="w-12 h-12 rounded-full object-cover border border-slate-700">
@@ -497,6 +511,9 @@ const showDefaults = async () => {
     try {
         const url = `${baseUrl}/trending/all/week?api_key=${apiKey}`;
         const response = await fetch(url);
+        if(!response.ok){
+            throw new Error(`API error: ${response.status}`);
+        }
         const data = await response.json();
         if (titleCard) {
             titleCard.innerText = "Trending Highlights";
@@ -520,6 +537,9 @@ const fetchQuery = async (query) => {
     try {
         const url = `${baseUrl}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
         const response = await fetch(url, {signal : currentSearchController.signal});
+        if(!response.ok){
+            throw new Error(`API error: ${response.status}`);
+        }
         const data = await response.json();
         if (titleCard) {
             titleCard.textContent = `Search Results for "${query}"`;
@@ -651,6 +671,7 @@ document.addEventListener("keydown", (e)=>{
     if (e.key === "Escape" && modal && !modal.classList.contains("hidden")) {
         modal.classList.add("hidden");
         modal.classList.remove("flex");
+        closeModal();
     }
 });
 
