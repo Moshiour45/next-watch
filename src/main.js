@@ -3,6 +3,18 @@
 
 //  Configuration & DOM References
 const apiKey = import.meta.env.VITE_API_KEY;
+
+// API Key Error Handling 
+if (!apiKey) {
+    console.error("VITE_API_KEY is not set. Create a .env file with your TMDB API key.");
+    document.querySelector("#resultsGrid").innerHTML = `
+        <div class="col-span-full text-center py-16">
+            <p class="text-red-400 text-lg font-medium">API key not configured.</p>
+            <p class="text-slate-500 text-sm mt-2">Create a .env file with VITE_API_KEY=your_tmdb_key</p>
+        </div>
+    `;
+}
+
 const searchInput = document.querySelector("#searchInput");
 const searchBtn = document.querySelector("#searchButton");
 const baseUrl = 'https://api.themoviedb.org/3';
@@ -11,6 +23,14 @@ const resultsGrid = document.querySelector("#resultsGrid");
 const titleCard = document.querySelector("h2");
 const logo = document.querySelector("#logo");
 
+
+// Sanitizer
+const escapeHTML = (str) => {
+    if (!str) return '';
+    const el = document.createElement('div');
+    el.textContent = str;
+    return el.innerHTML;
+};
 
 //  Modal Helpers (open / close)
 const openModal = () =>{
@@ -76,7 +96,7 @@ const showResults = (queries) => {
         const cardHTML = `
     <article data-id="${id}" data-type="${media_type || 'movie'}" class="group relative flex flex-col bg-slate-900/50 rounded-2xl overflow-hidden border border-slate-800/80 hover:border-teal-500/80 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_8px_30px_rgb(20,184,166,0.15)] cursor-pointer">
       <div class="aspect-[2/3] w-full relative overflow-hidden bg-slate-800">
-        <img src="${poster}" alt="${displayTitle}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy">
+        <img src="${poster}" alt="${escapeHTML(displayTitle)}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy">
         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 md:via-slate-900/40 to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-100"></div>
         <div class="absolute top-3 left-3 flex gap-2">
           <span class="bg-slate-950/80 backdrop-blur text-teal-400 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 border border-slate-700/50">
@@ -89,7 +109,7 @@ const showResults = (queries) => {
         <div class="flex items-center gap-2 mb-2 text-[11px] font-semibold tracking-wider text-teal-400/90 uppercase opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
           <span>${displayType}</span>
         </div>
-        <h3 class="font-extrabold text-xl text-white line-clamp-1 leading-tight group-hover:text-teal-300 transition-colors">${displayTitle}</h3>
+        <h3 class="font-extrabold text-xl text-white line-clamp-1 leading-tight group-hover:text-teal-300 transition-colors">${escapeHTML(displayTitle)}</h3>
         <div class="flex items-center justify-between mt-1 text-slate-400 text-sm">
           <span>${year}</span>
           <span class="opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">TMDB</span>
@@ -116,6 +136,9 @@ const fetchSeasonEpisodes = async (tvId, seasonNum) => {
     try {
         const url = `${baseUrl}/tv/${tvId}/season/${seasonNum}?api_key=${apiKey}`;
         const response = await fetch(url);
+        if(!response.ok){
+            throw new Error(`API error: ${response.status}`);
+        }
         const data = await response.json();
 
         if (!data.episodes || data.episodes.length === 0) {
@@ -133,17 +156,17 @@ const fetchSeasonEpisodes = async (tvId, seasonNum) => {
 
             return `
                 <div class="flex flex-col sm:flex-row gap-4 bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 hover:border-teal-500/50 transition-colors group">
-                    <img src="${epImg}" alt="${ep.name}" class="w-full sm:w-32 h-32 sm:h-20 object-cover rounded-lg shrink-0 bg-slate-800">
+                    <img src="${epImg}" alt="${escapeHTML(ep.name)}" class="w-full sm:w-32 h-32 sm:h-20 object-cover rounded-lg shrink-0 bg-slate-800">
                     <div class="flex flex-col w-full min-w-0">
                         <div class="flex justify-between items-start mb-1 gap-2">
                             <h4 class="text-sm font-bold text-white truncate leading-tight group-hover:text-teal-300 transition-colors">
-                                ${ep.episode_number}. ${ep.name}
+                                ${ep.episode_number}. ${escapeHTML(ep.name)}
                             </h4>
                             <span class="text-[10px] font-medium bg-slate-700/80 px-2 py-0.5 rounded text-teal-300 shrink-0 border border-slate-600">
                                 ${epDate}
                             </span>
                         </div>
-                        <p class="text-xs text-slate-400 line-clamp-2 mb-1">${ep.overview || 'No description available for this episode.'}</p>
+                        <p class="text-xs text-slate-400 line-clamp-2 mb-1">${escapeHTML(ep.overview) || 'No description available for this episode.'}</p>
                         <div class="mt-auto flex gap-3 text-[10px] text-slate-500 font-semibold">
                             <span>⭐ ${ep.vote_average ? ep.vote_average.toFixed(1) : 'N/A'}</span>
                             ${epRuntime ? `<span>⏱ ${epRuntime}</span>` : ''}
@@ -170,9 +193,9 @@ const showDetails = (data, castData, type) => {
     const displayDate = data.release_date || data.first_air_date || "N/A";
     const rating = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
     const poster = data.poster_path ? `${imageBaseUrl}${data.poster_path}` : 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=500&auto=format&fit=crop';
-    const genres = data.genres ? data.genres.map(g => g.name).join(", ") : "N/A";
-    const overview = data.overview || "No description available.";
-    const tagline = data.tagline ? `<p class="italic text-teal-400/80 text-sm mb-4 border-l-2 border-teal-500 pl-3">"${data.tagline}"</p>` : '';
+    const genres = data.genres ? data.genres.map(g => escapeHTML(g.name)).join(", ") : "N/A";
+    const overview = escapeHTML(data.overview) || "No description available.";
+    const tagline = data.tagline ? `<p class="italic text-teal-400/80 text-sm mb-4 border-l-2 border-teal-500 pl-3">"${escapeHTML(data.tagline)}"</p>` : '';
     const status = data.status || "Unknown";
 
     // Director / Creator
@@ -180,9 +203,9 @@ const showDetails = (data, castData, type) => {
     let directorName = "N/A";
     if (type === "movie") {
         const director = (castData?.crew || []).find(member => member.job === directorLabel);
-        directorName = director ? director.name : "N/A";
+        directorName = director ? escapeHTML(director.name) : "N/A";
     } else {
-        directorName = data.created_by && data.created_by.length > 0 ? data.created_by.map(c => c.name).join(", ") : "N/A";
+        directorName = data.created_by && data.created_by.length > 0 ? data.created_by.map(c => escapeHTML(c.name)).join(", ") : "N/A";
     }
 
     // Extract Certification / Age Rating
@@ -236,7 +259,7 @@ const showDetails = (data, castData, type) => {
             </div>
         `;
     } else if (type === "tv") {
-        const networks = data.networks ? data.networks.map(n => n.name).join(", ") : "N/A";
+        const networks = data.networks ? data.networks.map(n => escapeHTML(n.name)).join(", ") : "N/A";
         const seasonsCount = data.number_of_seasons || 0;
         const episodesCount = data.number_of_episodes || 0;
 
@@ -258,7 +281,7 @@ const showDetails = (data, castData, type) => {
             nextEpisodeBadge = `
                 <div class="mt-4 p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl">
                     <span class="text-teal-400 font-bold uppercase tracking-wider text-[10px] block mb-1">Upcoming Episode</span>
-                    <span class="text-slate-300 text-sm font-medium">S${nextEp.season_number}E${nextEp.episode_number}: "${nextEp.name}" airs on <strong class="text-white">${nextEp.air_date}</strong></span>
+                    <span class="text-slate-300 text-sm font-medium">S${nextEp.season_number}E${nextEp.episode_number}: "${escapeHTML(nextEp.name)}" airs on <strong class="text-white">${nextEp.air_date}</strong></span>
                 </div>
             `;
         }
@@ -270,12 +293,12 @@ const showDetails = (data, castData, type) => {
             // Build custom <li> options instead of <option> tags
             const optionsList = validSeasons.map(s => `
                 <li class="season-option px-4 py-2.5 text-xs text-slate-300 hover:bg-teal-500/10 hover:text-teal-400 cursor-pointer transition-colors border-b border-slate-800/50 last:border-0 flex items-center justify-between gap-3" data-value="${s.season_number}">
-                    <span class="line-clamp-2">${s.name}</span>
+                    <span class="line-clamp-2">${escapeHTML(s.name)}</span>
                     <span class="text-[10px] text-slate-500 whitespace-nowrap shrink-0">${s.episode_count} eps</span>
                 </li>
             `).join('');
             
-            const initialLabel = validSeasons.length > 0 ? validSeasons[0].name : 'Select Season';
+            const initialLabel = validSeasons.length > 0 ? escapeHTML(validSeasons[0].name) : 'Select Season';
             
             episodesSection = `
                 ${nextEpisodeBadge}
@@ -304,11 +327,13 @@ const showDetails = (data, castData, type) => {
 
     // Extract Top Cast
     const topCast = (castData?.cast || []).slice(0, 4).map(actor => {
-        const profilePic = actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : `https://ui-avatars.com/api/?name` + encodeURIComponent(actor.name) + `&background=random&color=fff`;
+        const profilePic = actor.profile_path 
+        ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` 
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(actor.name)}&background=random&color=fff`;
         return `
         <div class="flex flex-col items-center text-center gap-1">
-            <img src="${profilePic}" alt="${actor.name}" class="w-12 h-12 rounded-full object-cover border border-slate-700">
-            <span class="text-[10px] text-slate-300 line-clamp-1 w-16">${actor.name}</span>
+            <img src="${profilePic}" alt="${escapeHTML(actor.name)}" class="w-12 h-12 rounded-full object-cover border border-slate-700">
+            <span class="text-[10px] text-slate-300 line-clamp-1 w-16">${escapeHTML(actor.name)}</span>
         </div>`;
     }).join('');
 
@@ -328,7 +353,7 @@ const showDetails = (data, castData, type) => {
     let streamingSection = "";
     if(providers.length > 0){
         const providerIcons = providers.slice(0, 4).map(p => 
-            `<img src="https://image.tmdb.org/t/p/w92${p.logo_path}" alt="${p.provider_name}" title="${p.provider_name}" class="w-8 h-8 md:w-11 md:h-11 rounded-lg md:rounded-xl shadow-sm border border-slate-700/50 object-cover">`
+            `<img src="https://image.tmdb.org/t/p/w92${p.logo_path}" alt="${escapeHTML(p.provider_name)}" title="${escapeHTML(p.provider_name)}" class="w-8 h-8 md:w-11 md:h-11 rounded-lg md:rounded-xl shadow-sm border border-slate-700/50 object-cover">`
         ).join('');
         
         streamingSection = `
@@ -345,7 +370,7 @@ const showDetails = (data, castData, type) => {
     if(companies.length > 0){
         const companyIcons = companies.map(c => 
             `<div class="bg-white px-2 md:px-3 py-1 rounded-lg md:rounded-xl flex items-center justify-center h-8 md:h-11 border border-slate-700/50">
-                <img src="https://image.tmdb.org/t/p/w92${c.logo_path}" alt="${c.name}" title="${c.name}" class="max-h-5 md:max-h-7 max-w-[60px] md:max-w-[80px] object-contain">
+                <img src="https://image.tmdb.org/t/p/w92${c.logo_path}" alt="${escapeHTML(c.name)}" title="${escapeHTML(c.name)}" class="max-h-5 md:max-h-7 max-w-[60px] md:max-w-[80px] object-contain">
             </div>`
         ).join('');
         companiesSection = `
@@ -364,8 +389,8 @@ const showDetails = (data, castData, type) => {
             const title = item.title || item.name;
             return `
                 <div data-id="${item.id}" data-type="${item.media_type || type}" class="similar-card flex-shrink-0 w-24 cursor-pointer group">
-                    <img src="${img}" alt="${title}" class="w-full h-36 object-cover rounded-lg border border-slate-700/50 group-hover:border-teal-500/80 transition-colors">
-                    <p class="text-[10px] text-slate-400 mt-1 truncate group-hover:text-teal-300 transition-colors">${title}</p>
+                    <img src="${img}" alt="${escapeHTML(title)}" class="w-full h-36 object-cover rounded-lg border border-slate-700/50 group-hover:border-teal-500/80 transition-colors">
+                    <p class="text-[10px] text-slate-400 mt-1 truncate group-hover:text-teal-300 transition-colors">${escapeHTML(title)}</p>
                 </div>
             `;
         }).join('');
@@ -388,11 +413,11 @@ const showDetails = (data, castData, type) => {
             </button>
             
             <div class="w-1/2 sm:w-1/3 md:w-1/3 shrink-0 mx-auto md:mx-0 pt-8 md:pt-0">
-                <img src="${poster}" alt="${displayTitle}" class="w-full rounded-xl shadow-lg border border-slate-700/50 object-cover">
+                <img src="${poster}" alt="${escapeHTML(displayTitle)}" class="w-full rounded-xl shadow-lg border border-slate-700/50 object-cover">
             </div>
             
             <div class="flex flex-col text-left w-full min-w-0 pr-2 md:pr-6">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-white mb-2 pr-8">${displayTitle}</h2>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-white mb-2 pr-8">${escapeHTML(displayTitle)}</h2>
                 <div class="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-slate-400 mb-3 font-medium">
                     <span class="bg-slate-800 px-2 py-1 rounded text-teal-400 border border-slate-700">⭐ ${rating}</span>
                     <span class="bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700 font-bold">${ageRating}</span>
@@ -494,9 +519,13 @@ const showDetails = (data, castData, type) => {
 
 //  API Fetchers — Trending, Search, Details
 const showDefaults = async () => {
+    showLoader();
     try {
         const url = `${baseUrl}/trending/all/week?api_key=${apiKey}`;
         const response = await fetch(url);
+        if(!response.ok){
+            throw new Error(`API error: ${response.status}`);
+        }
         const data = await response.json();
         if (titleCard) {
             titleCard.innerText = "Trending Highlights";
@@ -520,6 +549,9 @@ const fetchQuery = async (query) => {
     try {
         const url = `${baseUrl}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
         const response = await fetch(url, {signal : currentSearchController.signal});
+        if(!response.ok){
+            throw new Error(`API error: ${response.status}`);
+        }
         const data = await response.json();
         if (titleCard) {
             titleCard.textContent = `Search Results for "${query}"`;
@@ -649,8 +681,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e)=>{
     const modal = document.querySelector("#details-modal");
     if (e.key === "Escape" && modal && !modal.classList.contains("hidden")) {
-        modal.classList.add("hidden");
-        modal.classList.remove("flex");
+        closeModal();
     }
 });
 
