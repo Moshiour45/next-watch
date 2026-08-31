@@ -136,7 +136,7 @@ All detail requests use `append_to_response` to batch sub-resources into a singl
 
 ## License
 
-MIT
+[MIT](LICENSE)
 
 ---
 
