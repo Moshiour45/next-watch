@@ -24,6 +24,7 @@ const titleCard = document.querySelector("h2");
 const logo = document.querySelector("#logo");
 
 
+// Sanitizer
 const escapeHTML = (str) => {
     if (!str) return '';
     const el = document.createElement('div');
